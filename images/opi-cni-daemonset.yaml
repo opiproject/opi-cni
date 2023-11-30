@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2023 Network Plumping Working Group
+# Copyright (C) 2023 Nordix Foundation.
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube-opi-cni-ds-amd64
+  namespace: kube-system
+  labels:
+    tier: node
+    app: opi-cni
+spec:
+  selector:
+    matchLabels:
+      name: opi-cni
+  template:
+    metadata:
+      labels:
+        name: opi-cni
+        tier: node
+        app: opi-cni
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: kube-opi-cni
+        image: ghcr.io/opiproject/opi-cni
+        imagePullPolicy: Never
+        securityContext:
+          allowPrivilegeEscalation: false
+          privileged: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "50Mi"
+          limits:
+            cpu: "100m"
+            memory: "50Mi"
+        volumeMounts:
+        - name: cnibin
+          mountPath: /host/opt/cni/bin
+      volumes:
+        - name: cnibin
+          hostPath:
+            path: /opt/cni/bin
